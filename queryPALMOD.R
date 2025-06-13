@@ -141,7 +141,7 @@ queryPALMOD <- function(sites,
           subData[subIndx] %>%
             map_lgl(function(x){
               max(x$medianAge_kaBP) - min(x$medianAge_kaBP) >= min_duration &
-                max(lag(x$medianAge_kaBP), na.rm = TRUE) < max_sample_interval &
+                max(diff(x$medianAge_kaBP), na.rm = TRUE) < max_sample_interval &
                 nrow(x) >= min_n_obs
             }) %>%
             any()
