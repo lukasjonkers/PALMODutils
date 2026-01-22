@@ -1,0 +1,51 @@
+require(tidyverse)
+
+nsst_joint_uncertainty <- function(x, n_ens_pairs){
+  dat <- readRDS(x)
+  
+  if(!"SurfaceTempEnsembles" %in% names(dat)){
+    stop("File has no age and/or nSST ensembles")
+  } else {
+    nensage <- dat$AgeEnsemblesBACON %>%
+      ncol() -1
+    
+    # dat$SurfaceTempEnsembles %>%
+    out <- map_dfr(dat$SurfaceTempEnsembles, function(y){
+      
+      # do this just to be sure, but all sst ensembles should have n = 1,000
+      nensnsst <- ncol(y$ensembles) - 1
+      
+      # determine subsetting
+      i <- expand_grid(a = 1:nensage, s = 1:nensnsst) %>%
+        slice_sample(n = n_ens_pairs) 
+      
+      # ensure age and nsst ensembles match in depth
+      z <- intersect(dat$AgeEnsemblesBACON$depth_merged, y$ensembles$depth_merged)
+      
+      # subset age ensembles
+      ages <- dat$AgeEnsemblesBACON %>%
+        filter(depth_merged %in% z) %>%
+        select(1, all_of(i$a + 1)) %>%
+        pivot_longer(-depth_merged, values_to = "age", names_to = NULL)
+      
+      # and n sst ensembles
+      nssts <- y$ensembles %>%
+        filter(depth_merged %in% z) %>%
+        select(all_of(i$s + 1)) %>%
+        pivot_longer(everything(), values_to = "nsst", names_to = NULL)
+      
+      # combine and calculate summary statistics
+      nsst_summary <- bind_cols(ages, nssts) %>%
+        group_by(depth_merged) %>%
+        reframe(
+          median_age_kaBP = median(age),
+          q = list(quantile(nsst, c(.05, .25, .5, .75, .95)))
+        ) %>%
+        unnest_wider(q)
+      
+      tibble(y$details, nsst = list(nsst_summary))
+    })
+    
+    return(out)
+  }
+}
