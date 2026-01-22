@@ -2,6 +2,7 @@
 example R code to interact with the PALMOD 130k marine palaeoclimate data synthesis version 2 (to be released soon). 
 The contents of version 1 of the data product are described in detail in https://doi.org/10.5194/essd-2019-223. Version 1 data are available for download at https://doi.pangaea.de/10.1594/PANGAEA.908831. The links to the data and the data descriptor for version 2 will be mentioned here in due time. This code cannot be used to anymore to query previous versions of the data product (use the initial commit instead).
 
+### Querying the data
 The function `queryPALMOD()` allows querying of the data by:
 * geographical range
 * ocean basin
@@ -24,9 +25,9 @@ The function either returns `TRUE/FALSE` indicating whether the query criteria a
 
 `PALMOD130k_V2_0_0 <- list.files("path", full.names = TRUE)`
 
-### example to query the data
+#### example to query the data
 ```
-source('queryPALMOD.R')
+source("queryPALMOD.R")
 meetsCrit <- queryPALMOD(sites = PALMOD130k_V2_0_0,
                          Parameter = "planktonic.d18O",
                          ParameterDetail = NULL,
@@ -44,4 +45,13 @@ meetsCrit <- queryPALMOD(sites = PALMOD130k_V2_0_0,
                          min_n_tiepoint = 3,
                          extract_data = TRUE
                          )
+```
+
+### Uncertainty estimate of near sea surface temperature
+The function `nsst_joint_uncertainty` calculates time series of near sea surface temperature including the joint uncertainty of age and calibration. It randomly selects `n_ens_pairs` from the 10<sup>6</sup> possible combinations of the age and temperature ensembles and calculates summary statistics for age (median) and near sea surface temperature. The output is a tibble with details about the proxy sensor and the calibration and the 5%, 25%, 50%, 75% and 95% quantiles of nsst.
+
+#### example to estimate uncertainty of near sea surface temperature
+```
+source("nsst_joint_uncertainty.R")
+nsst_joint_uncertainty(PALMOD130k_V2_0_0[1], n_ens_pairs = 1e3)
 ```
